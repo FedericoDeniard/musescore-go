@@ -1,11 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	config "github.com/FedericoDeniard/musescore-go/src/config"
+	scrap "github.com/FedericoDeniard/musescore-go/src/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
 )
 
+type ScrapRequest struct {
+	URL string `json:"url"`
+}
+
 func main() {
-	// scrap.Scrap()
 	router := gin.Default()
 
 	router.Static("/assets", "./src/static/frontend/dist/assets")
@@ -13,6 +24,34 @@ func main() {
 		c.File("./src/static/frontend/dist/index.html")
 	})
 
-	// Iniciar el servidor
-	router.Run(":8080")
+	router.POST("/scrap", func(c *gin.Context) {
+
+		var req ScrapRequest
+
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		url := req.URL
+		fmt.Println("URL recibida:", url)
+
+		chromiumPath := "/usr/bin/chromium-browser"
+		if config.KEYS.ENVIRONMENT == "production" {
+			chromiumPath = "/usr/bin/chromium"
+		}
+		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
+		browser := rod.New().ControlURL(u).MustConnect()
+
+		pdfPath := scrap.Scrap(browser, url)
+		fmt.Println("PDF Path:", pdfPath)
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filepath.Base(pdfPath)))
+		c.Header("Content-Type", "application/pdf")
+
+		c.File(pdfPath)
+		os.Remove(pdfPath)
+
+	})
+
+	router.Run(":8000")
 }
