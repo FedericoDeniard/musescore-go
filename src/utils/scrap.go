@@ -24,7 +24,7 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 
 	scrollerComponent, err := page.Timeout(10 * time.Second).Element("#jmuse-scroller-component")
 	if err != nil || scrollerComponent == nil {
-		httpError := customErrors.HttpError{StatusCode: 400, Message: "No se encontró el componente jmuse-scroller-component"}
+		httpError := customErrors.HttpError{StatusCode: 404, Message: "No se encontró el componente jmuse-scroller-component"}
 		fmt.Println(httpError.Error())
 		return "", &httpError
 	}
