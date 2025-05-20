@@ -54,6 +54,8 @@ func Scrap(browser *rod.Browser, url string) string {
 		}
 	} else if imagesExtensions == ".png" {
 		convertedImages = imagesPath
+	} else {
+		convertedImages = imagesPath
 	}
 
 	pdfPath, err := images.ConvertPngToPdf(convertedImages...)
