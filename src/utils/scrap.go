@@ -9,16 +9,16 @@ import (
 	"github.com/go-rod/rod"
 )
 
-func Scrap(browser *rod.Browser) {
+func Scrap(browser *rod.Browser, url string) string {
 	fmt.Println("Scraping process started...")
 	// Configurar el navegador
 	defer browser.MustClose()
 
-	// link := "https://musescore.com/willdsc/scores/5964065"
-	// link := "https://musescore.com/ericfontainejazz/scores/5662210"
-	link := "https://musescore.com/user/2539321/scores/7347764"
+	// url := "https://musescore.com/willdsc/scores/5964065"
+	// url := "https://musescore.com/ericfontainejazz/scores/5662210"
+	// url := "https://musescore.com/user/2539321/scores/7347764"
 
-	page := browser.MustPage(link)
+	page := browser.MustPage(url)
 	fmt.Println("Page created")
 	defer page.MustClose()
 	fmt.Println("Page loaded")
@@ -53,13 +53,14 @@ func Scrap(browser *rod.Browser) {
 		panic(err)
 	}
 
-	_, err = images.ConvertPngToPdf(pngPaths...)
+	pdfPath, err := images.ConvertPngToPdf(pngPaths...)
 	if err != nil {
 		panic(err)
 	}
 	filesToDelete := append(imagesPath, pngPaths...)
 	images.DeleteImages(filesToDelete...)
 	fmt.Println("Process finished")
+	return pdfPath
 }
 
 // func getTitle(page *rod.Page) string {
@@ -78,45 +79,48 @@ func Scrap(browser *rod.Browser) {
 // }
 
 func getSheets(page *rod.Page, channel chan<- string) {
+	fmt.Println("Getting sheets...")
 	defer close(channel)
-	jmuseScrollerComponent := page.MustElement("#jmuse-scroller-component")
-	if jmuseScrollerComponent != nil {
-		jmuseScrollerComponent.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
+	jmuseScrollerComponent, err := page.Element("#jmuse-scroller-component")
+	if err != nil {
+		fmt.Println("No se encontró el componente jmuse-scroller-component:", err)
+		return
+	}
 
-		page.MustWaitRequestIdle()
+	jmuseScrollerComponent.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
 
-		sheets := page.MustElements(".EEnGW")
-		fmt.Println("Sheets found: ", len(sheets))
+	page.MustWaitRequestIdle()
+	sheets := page.MustElements(".EEnGW")
+	fmt.Println("Sheets found: ", len(sheets))
 
-		for i, sheet := range sheets {
-			fmt.Printf("Procesando hoja %d...\n", i)
+	for i, sheet := range sheets {
+		fmt.Printf("Procesando hoja %d...\n", i)
 
-			sheet.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
+		sheet.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
 
-			err := page.Timeout(10 * time.Second).Wait(&rod.EvalOptions{
-				ThisObj: sheet.Object,
-				JS: `() => {
+		err := page.Timeout(10 * time.Second).Wait(&rod.EvalOptions{
+			ThisObj: sheet.Object,
+			JS: `() => {
 		const img = this.querySelector("img");
 		return img && img.complete && img.naturalHeight !== 0;
 	}`,
-			})
+		})
 
-			if err != nil {
-				fmt.Printf("Imagen %d no cargó a tiempo: %v\n", i, err)
-				continue
-			}
+		if err != nil {
+			fmt.Printf("Imagen %d no cargó a tiempo: %v\n", i, err)
+			continue
+		}
 
-			if img, err := sheet.Element("img"); err == nil && img != nil {
-				if srcAttr, _ := img.Attribute("src"); srcAttr != nil && *srcAttr != "" {
-					fmt.Printf("Imagen %d src: %s\n", i, *srcAttr)
-					channel <- *srcAttr
-				} else {
-					channel <- ""
-					fmt.Printf("Imagen %d no tiene atributo src\n", i)
-				}
+		if img, err := sheet.Element("img"); err == nil && img != nil {
+			if srcAttr, _ := img.Attribute("src"); srcAttr != nil && *srcAttr != "" {
+				fmt.Printf("Imagen %d src: %s\n", i, *srcAttr)
+				channel <- *srcAttr
 			} else {
-				fmt.Printf("No se encontró <img> en la hoja %d\n", i)
+				channel <- ""
+				fmt.Printf("Imagen %d no tiene atributo src\n", i)
 			}
+		} else {
+			fmt.Printf("No se encontró <img> en la hoja %d\n", i)
 		}
 	}
 }

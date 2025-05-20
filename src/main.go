@@ -1,27 +1,66 @@
 package main
 
 import (
-	"strconv"
+	"fmt"
+	"os"
+	"path/filepath"
 
-	"github.com/FedericoDeniard/musescore-go/src/utils/images"
+	config "github.com/FedericoDeniard/musescore-go/src/config"
+	scrap "github.com/FedericoDeniard/musescore-go/src/utils"
+	"github.com/gin-gonic/gin"
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
 )
 
-func main() {
-	// scrap.Scrap()
-	// router := gin.Default()
-
-	// router.Static("/assets", "./src/static/frontend/dist/assets")
-	// router.GET("/", func(c *gin.Context) {
-	// 	c.File("./src/static/frontend/dist/index.html")
-	// })
-
-	// // Iniciar el servidor
-	// router.Run(":8080")
-	var pngPaths []string
-	for i := 1; i <= 3; i++ {
-		pngPath := images.ConvertSvgToPng("src/downloads/images/" + strconv.Itoa(i) + ".svg")
-		pngPaths = append(pngPaths, pngPath)
-	}
-
-	images.ConvertPngToPdf(pngPaths...)
+type ScrapRequest struct {
+	URL string `json:"url"`
 }
+
+func main() {
+	router := gin.Default()
+
+	router.Static("/assets", "./src/static/frontend/dist/assets")
+	router.GET("/", func(c *gin.Context) {
+		c.File("./src/static/frontend/dist/index.html")
+	})
+
+	router.POST("/scrap", func(c *gin.Context) {
+
+		var req ScrapRequest
+
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		url := req.URL
+		fmt.Println("URL recibida:", url)
+
+		chromiumPath := "/usr/bin/chromium-browser"
+		if config.KEYS.ENVIRONMENT == "production" {
+			chromiumPath = "/usr/bin/chromium"
+		}
+		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
+		browser := rod.New().ControlURL(u).MustConnect()
+
+		pdfPath := scrap.Scrap(browser, url)
+		fmt.Println("PDF Path:", pdfPath)
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filepath.Base(pdfPath)))
+		c.Header("Content-Type", "application/pdf")
+
+		c.File(pdfPath)
+		os.Remove(pdfPath)
+
+	})
+
+	router.Run(":8000")
+}
+
+// url := "https://musescore.com/user/2539321/scores/7347764"
+// chromiumPath := "/usr/bin/chromium-browser"
+// if config.KEYS.ENVIRONMENT == "production" {
+// 	chromiumPath = "/usr/bin/chromium"
+// }
+// u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
+// browser := rod.New().ControlURL(u).MustConnect()
+// scrap.Scrap(browser, url)

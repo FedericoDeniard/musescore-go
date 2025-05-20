@@ -136,7 +136,10 @@ func ConvertPngToPdf(pngPaths ...string) (string, error) {
 		pdf.Image(imageName, 0, 0, 210, 297, false, "", 0, "")
 	}
 
-	outputPDF := filepath.Join(filepath.Dir(pngPaths[0]), filepath.Base(pngPaths[0][:len(pngPaths[0])-len(filepath.Ext(pngPaths[0]))]))
+	outputPDF := filepath.Join(
+		filepath.Dir(pngPaths[0]), // carpeta donde está el primer PNG
+		filepath.Base(pngPaths[0][:len(pngPaths[0])-len(filepath.Ext(pngPaths[0]))]), // nombre del archivo sin extensión
+	) + ".pdf"
 
 	// Crear directorio de salida si no existe
 	if err := os.MkdirAll(filepath.Dir(outputPDF), 0755); err != nil {
@@ -144,7 +147,7 @@ func ConvertPngToPdf(pngPaths ...string) (string, error) {
 	}
 
 	// Guardar PDF
-	if err := pdf.OutputFileAndClose(outputPDF + ".pdf"); err != nil {
+	if err := pdf.OutputFileAndClose(outputPDF); err != nil {
 		return "", fmt.Errorf("error guardando PDF: %w", err)
 	}
 
