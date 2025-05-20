@@ -1,6 +1,7 @@
 package images
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
