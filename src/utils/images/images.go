@@ -3,18 +3,16 @@ package images
 import (
 	"bytes"
 	"fmt"
-	"image"
-	"image/png"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/srwiley/oksvg"
-	"github.com/srwiley/rasterx"
+	"github.com/mskrha/svg2png"
 )
 
 func DownloadImage(urls []string) ([]string, error) {
@@ -63,61 +61,73 @@ func getExtensionFromImage(url string) string {
 	}
 	panic("Error al obtener la extension")
 }
+func ConvertSvgToPng(svgPath string) string {
 
-func ConvertMusescoreSVGsToPDF(svgPaths []string, outputPDF string) (string, error) {
+	var input []byte
+
+	// Fill input with svg data
+	input, err := os.ReadFile(svgPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	converter := svg2png.New()
+	output, err := converter.Convert(input)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
+	pngPath := filepath.Join(filepath.Dir(svgPath), filepath.Base(svgPath[:len(svgPath)-len(filepath.Ext(svgPath))])+".png")
+	err = os.WriteFile(pngPath, output, 0644)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error escribiendo el archivo PNG:", err)
+	}
+	return pngPath
+}
+
+func ConvertMultipleSvgToPng(svgPaths ...string) ([]string, error) {
+	var wg sync.WaitGroup
+	outputPaths := make([]string, len(svgPaths))
+	for i, svgPath := range svgPaths {
+		wg.Add(1)
+		go func(path string, index int) {
+			defer wg.Done()
+			outputPaths[index] = ConvertSvgToPng(path)
+		}(svgPath, i)
+	}
+	wg.Wait()
+	return outputPaths, nil
+}
+
+func ConvertPngToPdf(pngPaths ...string) (string, error) {
 	// Crear nuevo PDF
 	pdf := gofpdf.New("P", "mm", "A4", "")
+	for _, pngPath := range pngPaths {
+		fmt.Println(pngPath)
+	}
 
-	for _, svgPath := range svgPaths {
-		// 1. Leer archivo SVG
-		svgData, err := os.ReadFile(svgPath)
+	for _, pngPath := range pngPaths {
+		// 1. Leer archivo PNG
+		pngData, err := os.ReadFile(pngPath)
 		if err != nil {
-			return "", fmt.Errorf("error leyendo SVG %s: %w", svgPath, err)
+			return "", fmt.Errorf("error leyendo PNG %s: %w", pngPath, err)
 		}
 
-		// 2. Parsear SVG con oksvg (más tolerante)
-		icon, err := oksvg.ReadIconStream(bytes.NewReader(svgData))
-		if err != nil {
-			return "", fmt.Errorf("error parseando SVG %s: %w", svgPath, err)
-		}
-
-		// 3. Configurar dimensiones (similar a tu ajuste de -800 en Node)
-		width := icon.ViewBox.W
-		height := icon.ViewBox.H
-		if width < 0 {
-			width = icon.ViewBox.W
-		}
-		if height < 0 {
-			height = icon.ViewBox.H
-		}
-
-		// 4. Renderizar SVG a imagen PNG en memoria
-		img := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
-		scannerGV := rasterx.NewScannerGV(int(width), int(height), img, img.Bounds())
-		raster := rasterx.NewDasher(int(width), int(height), scannerGV)
-		icon.Draw(raster, 1.0)
-
-		// 5. Guardar PNG temporal en memoria
-		var pngBuf bytes.Buffer
-		if err := png.Encode(&pngBuf, img); err != nil {
-			return "", fmt.Errorf("error convirtiendo a PNG: %w", err)
-		}
-
-		// 6. Añadir al PDF
+		// 2. Añadir al PDF
 		pdf.AddPageFormat("P", gofpdf.SizeType{
-			Wd: width / 3.78, // Convertir px a mm (96dpi -> 3.78px/mm)
-			Ht: height / 3.78,
+			Wd: 210,
+			Ht: 297,
 		})
 
-		// Registrar la imagen PNG en el PDF
 		opt := gofpdf.ImageOptions{
 			ImageType: "PNG",
 			ReadDpi:   true,
 		}
-		imageName := filepath.Base(svgPath)
-		pdf.RegisterImageOptionsReader(imageName, opt, &pngBuf)
-		pdf.Image(imageName, 0, 0, width/3.78, height/3.78, false, "", 0, "")
+		imageName := filepath.Base(pngPath)
+		pdf.RegisterImageOptionsReader(imageName, opt, bytes.NewReader(pngData))
+		pdf.Image(imageName, 0, 0, 210, 297, false, "", 0, "")
 	}
+
+	outputPDF := filepath.Join(filepath.Dir(pngPaths[0]), filepath.Base(pngPaths[0][:len(pngPaths[0])-len(filepath.Ext(pngPaths[0]))]))
 
 	// Crear directorio de salida si no existe
 	if err := os.MkdirAll(filepath.Dir(outputPDF), 0755); err != nil {
@@ -129,10 +139,5 @@ func ConvertMusescoreSVGsToPDF(svgPaths []string, outputPDF string) (string, err
 		return "", fmt.Errorf("error guardando PDF: %w", err)
 	}
 
-	// Devolver ruta absoluta
-	absPath, err := filepath.Abs(outputPDF)
-	if err != nil {
-		return outputPDF, nil
-	}
-	return absPath, nil
+	return outputPDF, nil
 }
