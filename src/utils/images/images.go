@@ -19,6 +19,12 @@ func DownloadImage(url string) string {
 	imagesFolder := "src/downloads/images/"
 	var extension string
 
+	err := os.MkdirAll(imagesFolder, 0755)
+	if err != nil {
+		fmt.Println("Error al crear directorio:", err)
+		return ""
+	}
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
