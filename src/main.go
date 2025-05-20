@@ -9,6 +9,7 @@ import (
 
 	"github.com/FedericoDeniard/musescore-go/src/constants"
 	scrap "github.com/FedericoDeniard/musescore-go/src/utils"
+	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/gin-gonic/gin"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -31,7 +32,10 @@ func main() {
 		var req ScrapRequest
 
 		if err := c.BindJSON(&req); err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			customErrors.HandleError(c, &customErrors.HttpError{
+				StatusCode: 400,
+				Message:    "Invalid JSON",
+			})
 			return
 		}
 
@@ -49,14 +53,17 @@ func main() {
 		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
 		browser := rod.New().Context(ctx).ControlURL(u).MustConnect()
 
-		pdfPath := scrap.Scrap(browser, url)
+		pdfPath, httpError := scrap.Scrap(browser, url)
+		if httpError != nil {
+			customErrors.HandleError(c, httpError)
+			return
+		}
 		fmt.Println("PDF Path:", pdfPath)
 		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filepath.Base(pdfPath)))
 		c.Header("Content-Type", "application/pdf")
 
 		c.File(pdfPath)
 		os.Remove(pdfPath)
-
 	})
 
 	router.Run(":8000")

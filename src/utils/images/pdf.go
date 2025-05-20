@@ -6,18 +6,21 @@ import (
 	"os"
 	"path/filepath"
 
+	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/jung-kurt/gofpdf"
 )
 
-func ConvertPngToPdf(pngPaths ...string) (string, error) {
+func ConvertPngToPdf(pngPaths ...string) (string, *customErrors.HttpError) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	for _, path := range pngPaths {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return "", fmt.Errorf("error leyendo PNG %s: %w", path, err)
+			return "", &customErrors.HttpError{
+				StatusCode: 500,
+				Message:    fmt.Sprintf("error leyendo PNG %s: %w", path, err),
+			}
 		}
-		// 2. Añadir al PDF
 		pdf.AddPageFormat("P", gofpdf.SizeType{
 			Wd: 210,
 			Ht: 297,
@@ -39,11 +42,17 @@ func ConvertPngToPdf(pngPaths ...string) (string, error) {
 	) + ".pdf"
 
 	if err := os.MkdirAll(filepath.Dir(outputPDF), 0755); err != nil {
-		return "", fmt.Errorf("error creando directorio: %w", err)
+		return "", &customErrors.HttpError{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("error creando directorio: %w", err),
+		}
 	}
 
 	if err := pdf.OutputFileAndClose(outputPDF); err != nil {
-		return "", fmt.Errorf("error guardando PDF: %w", err)
+		return "", &customErrors.HttpError{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("error guardando PDF: %w", err),
+		}
 	}
 
 	return outputPDF, nil
