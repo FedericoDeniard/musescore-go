@@ -26,6 +26,7 @@ func DownloadImage(url string) string {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Error al descargar la imagen:", resp.StatusCode)
 		return ""
 	}
 
@@ -35,11 +36,13 @@ func DownloadImage(url string) string {
 
 	file, err := os.Create(filePath)
 	if err != nil {
+		fmt.Println("Error al crear el archivo:", err)
 		return ""
 	}
 	defer file.Close()
 
 	if _, err := io.Copy(file, resp.Body); err != nil {
+		fmt.Println("Error al copiar el archivo:", err)
 		return ""
 	}
 
