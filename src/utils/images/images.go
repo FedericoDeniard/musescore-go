@@ -98,18 +98,32 @@ func ConvertMultipleSvgToPng(svgPaths ...string) ([]string, error) {
 	return outputPaths, nil
 }
 
+type pngPage struct {
+	data []byte
+	err  error
+}
+
 func ConvertPngToPdf(pngPaths ...string) (string, error) {
 	// Crear nuevo PDF
 	pdf := gofpdf.New("P", "mm", "A4", "")
-	for _, pngPath := range pngPaths {
-		fmt.Println(pngPath)
+	pages := make([]pngPage, len(pngPaths))
+
+	var wg sync.WaitGroup
+
+	for i, path := range pngPaths {
+		wg.Add(1)
+		go func(path string, index int) {
+			defer wg.Done()
+			data, err := os.ReadFile(path)
+			pages[index] = pngPage{data, err}
+		}(path, i)
 	}
 
-	for _, pngPath := range pngPaths {
-		// 1. Leer archivo PNG
-		pngData, err := os.ReadFile(pngPath)
-		if err != nil {
-			return "", fmt.Errorf("error leyendo PNG %s: %w", pngPath, err)
+	wg.Wait()
+
+	for i, page := range pages {
+		if page.err != nil {
+			return "", fmt.Errorf("error leyendo PNG %s: %w", pngPaths[i], page.err)
 		}
 
 		// 2. Añadir al PDF
@@ -122,8 +136,8 @@ func ConvertPngToPdf(pngPaths ...string) (string, error) {
 			ImageType: "PNG",
 			ReadDpi:   true,
 		}
-		imageName := filepath.Base(pngPath)
-		pdf.RegisterImageOptionsReader(imageName, opt, bytes.NewReader(pngData))
+		imageName := filepath.Base(pngPaths[i])
+		pdf.RegisterImageOptionsReader(imageName, opt, bytes.NewReader(page.data))
 		pdf.Image(imageName, 0, 0, 210, 297, false, "", 0, "")
 	}
 
