@@ -43,16 +43,24 @@ func Scrap(browser *rod.Browser, url string) string {
 	fmt.Println(imagesPath)
 	fmt.Printf("Partituras descargadas: %d \n%v", len(imagesPath), imagesPath)
 
-	pngPaths, err := images.ConvertMultipleSvgToPng(imagesPath...)
-	if err != nil {
-		panic(err)
+	imagesExtensions := images.GetExtensionFromImage(imagesPath[0])
+	var convertedImages []string
+	var err error
+
+	if imagesExtensions == ".svg" {
+		convertedImages, err = images.ConvertMultipleSvgToPng(imagesPath...)
+		if err != nil {
+			panic(err)
+		}
+	} else if imagesExtensions == ".png" {
+		convertedImages = imagesPath
 	}
 
-	pdfPath, err := images.ConvertPngToPdf(pngPaths...)
+	pdfPath, err := images.ConvertPngToPdf(convertedImages...)
 	if err != nil {
 		panic(err)
 	}
-	filesToDelete := append(imagesPath, pngPaths...)
+	filesToDelete := append(imagesPath, convertedImages...)
 	images.DeleteImages(filesToDelete...)
 	fmt.Println("Process finished")
 	return pdfPath
