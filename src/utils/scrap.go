@@ -2,6 +2,7 @@ package scrap
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -99,7 +100,7 @@ func getSheets(page *rod.Page, channel chan<- string) {
 	fmt.Println("Sheets found: ", len(sheets))
 
 	for i, sheet := range sheets {
-		fmt.Printf("Procesando hoja %d...\n", i)
+		fmt.Printf("Procesando hoja %d...\n", i+1)
 
 		sheet.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
 
@@ -118,7 +119,7 @@ func getSheets(page *rod.Page, channel chan<- string) {
 
 		if img, err := sheet.Element("img"); err == nil && img != nil {
 			if srcAttr, _ := img.Attribute("src"); srcAttr != nil && *srcAttr != "" {
-				fmt.Printf("Imagen %d src: %s\n", i, *srcAttr)
+				fmt.Println("Imagen " + strconv.Itoa(i+1) + " procesada")
 				channel <- *srcAttr
 			} else {
 				channel <- ""
