@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	config "github.com/FedericoDeniard/musescore-go/src/config"
+	"github.com/FedericoDeniard/musescore-go/src/constants"
 	scrap "github.com/FedericoDeniard/musescore-go/src/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-rod/rod"
@@ -37,7 +37,7 @@ func main() {
 		fmt.Println("URL recibida:", url)
 
 		chromiumPath := "/usr/bin/chromium-browser"
-		if config.KEYS.ENVIRONMENT == "production" {
+		if constants.KEYS.ENVIRONMENT == "production" {
 			chromiumPath = "/usr/bin/chromium"
 		}
 		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
