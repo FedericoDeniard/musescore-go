@@ -37,7 +37,7 @@ func main() {
 		fmt.Println("URL recibida:", url)
 
 		chromiumPath := "/usr/bin/chromium-browser"
-		if constants.KEYS.ENVIRONMENT == "production" {
+		if constants.KEYS.ENVIROMENT == "production" {
 			chromiumPath = "/usr/bin/chromium"
 		}
 		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()

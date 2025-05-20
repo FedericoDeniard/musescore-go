@@ -7,21 +7,21 @@ import (
 )
 
 type Config struct {
-	ENVIRONMENT string
+	ENVIROMENT string
 }
 
 var KEYS Config
 
 func init() {
 	godotenv.Load()
-	environment := os.Getenv("ENVIRONMENT")
+	ENVIRONMENT := os.Getenv("ENVIROMENT")
 
-	if environment == "" {
-		environment = "development"
+	if ENVIRONMENT == "" {
+		ENVIRONMENT = "development"
 	}
 
 	KEYS = Config{
-		ENVIRONMENT: environment,
+		ENVIROMENT: ENVIRONMENT,
 	}
 
 }
