@@ -15,40 +15,35 @@ import (
 	"github.com/mskrha/svg2png"
 )
 
-func DownloadImage(urls []string) ([]string, error) {
-	var imagesTempNames []string
+func DownloadImage(url string) string {
 	imagesFolder := "src/downloads/images/"
 	var extension string
 
-	for _, url := range urls {
-		resp, err := http.Get(url)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, err
-		}
-
-		extension = getExtensionFromImage(url)
-		fmt.Println(extension)
-		fileName := uuid.New().String()
-		filePath := filepath.Join(imagesFolder, fileName+extension)
-
-		file, err := os.Create(filePath)
-		if err != nil {
-			return nil, err
-		}
-		defer file.Close()
-
-		if _, err := io.Copy(file, resp.Body); err != nil {
-			return nil, err
-		}
-
-		imagesTempNames = append(imagesTempNames, filePath)
+	resp, err := http.Get(url)
+	if err != nil {
+		return ""
 	}
-	return imagesTempNames, nil
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	extension = getExtensionFromImage(url)
+	fileName := uuid.New().String()
+	filePath := filepath.Join(imagesFolder, fileName+extension)
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	if _, err := io.Copy(file, resp.Body); err != nil {
+		return ""
+	}
+
+	return filePath
 }
 
 func getExtensionFromImage(url string) string {
@@ -154,4 +149,10 @@ func ConvertPngToPdf(pngPaths ...string) (string, error) {
 	}
 
 	return outputPDF, nil
+}
+
+func DeleteImages(paths ...string) {
+	for _, path := range paths {
+		os.Remove(path)
+	}
 }
