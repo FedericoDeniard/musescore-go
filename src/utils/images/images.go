@@ -60,7 +60,6 @@ func ConvertSvgToPng(svgPath string) string {
 
 	var input []byte
 
-	// Fill input with svg data
 	input, err := os.ReadFile(svgPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -99,7 +98,6 @@ type pngPage struct {
 }
 
 func ConvertPngToPdf(pngPaths ...string) (string, error) {
-	// Crear nuevo PDF
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pages := make([]pngPage, len(pngPaths))
 
@@ -137,16 +135,14 @@ func ConvertPngToPdf(pngPaths ...string) (string, error) {
 	}
 
 	outputPDF := filepath.Join(
-		filepath.Dir(pngPaths[0]), // carpeta donde está el primer PNG
-		filepath.Base(pngPaths[0][:len(pngPaths[0])-len(filepath.Ext(pngPaths[0]))]), // nombre del archivo sin extensión
+		filepath.Dir(pngPaths[0]),
+		filepath.Base(pngPaths[0][:len(pngPaths[0])-len(filepath.Ext(pngPaths[0]))]),
 	) + ".pdf"
 
-	// Crear directorio de salida si no existe
 	if err := os.MkdirAll(filepath.Dir(outputPDF), 0755); err != nil {
 		return "", fmt.Errorf("error creando directorio: %w", err)
 	}
 
-	// Guardar PDF
 	if err := pdf.OutputFileAndClose(outputPDF); err != nil {
 		return "", fmt.Errorf("error guardando PDF: %w", err)
 	}

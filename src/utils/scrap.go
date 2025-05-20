@@ -11,12 +11,7 @@ import (
 
 func Scrap(browser *rod.Browser, url string) string {
 	fmt.Println("Scraping process started...")
-	// Configurar el navegador
 	defer browser.MustClose()
-
-	// url := "https://musescore.com/willdsc/scores/5964065"
-	// url := "https://musescore.com/ericfontainejazz/scores/5662210"
-	// url := "https://musescore.com/user/2539321/scores/7347764"
 
 	page := browser.MustPage(url)
 	fmt.Println("Page created")

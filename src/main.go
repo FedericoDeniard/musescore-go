@@ -55,12 +55,3 @@ func main() {
 
 	router.Run(":8000")
 }
-
-// url := "https://musescore.com/user/2539321/scores/7347764"
-// chromiumPath := "/usr/bin/chromium-browser"
-// if config.KEYS.ENVIRONMENT == "production" {
-// 	chromiumPath = "/usr/bin/chromium"
-// }
-// u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
-// browser := rod.New().ControlURL(u).MustConnect()
-// scrap.Scrap(browser, url)
