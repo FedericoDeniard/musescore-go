@@ -1,3 +1,3 @@
 export const KEYS = {
-    url: import.meta.env.VITE_API_URL || "http://localhost:8000/scrap",
+    url: import.meta.env.VITE_API_URL || "https://musescore-scrapper-production.up.railway.app/scrap",
 }

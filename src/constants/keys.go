@@ -6,23 +6,22 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
 type Config struct {
-	Port string
+	ENVIROMENT string
 }
 
 var KEYS Config
 
-func init(){
+func init() {
 	godotenv.Load()
-	port := os.Getenv("PORT")
+	ENVIRONMENT := os.Getenv("ENVIROMENT")
 
-	if port == "" {
-		port = "8080"
+	if ENVIRONMENT == "" {
+		ENVIRONMENT = "development"
 	}
 
 	KEYS = Config{
-		Port: port,
+		ENVIROMENT: ENVIRONMENT,
 	}
 
 }
