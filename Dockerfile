@@ -1,7 +1,17 @@
-# Usa una imagen base de Go
+# Etapa 1: Construir el frontend con Node.js
+FROM node:22 as frontend-builder
+WORKDIR /app
+
+COPY src/static/frontend/package*.json ./src/static/frontend/
+WORKDIR /app/src/static/frontend
+RUN npm install
+COPY src/static/frontend/ ./
+RUN npm run build
+
+# Etapa 2: Construir y correr el backend con Go
 FROM golang:1.23.4
 
-
+# Instalar dependencias del sistema (para rod/chromium)
 RUN apt-get update && apt-get install -y \
     chromium \
     ca-certificates \
@@ -44,15 +54,18 @@ RUN apt-get update && apt-get install -y \
     inkscape \
     --no-install-recommends
 
-# Copia tu código fuente
-COPY . /app
+# Crear carpeta de trabajo y copiar todo el código del proyecto
 WORKDIR /app
+COPY . .
+
+# Copiar build del frontend desde la etapa 1
+COPY --from=frontend-builder /app/src/static/frontend/dist ./src/static/frontend/dist
+
+# Compilar el binario de Go
+RUN go mod download
+RUN go build -o dist/main src/main.go
 
 EXPOSE 8000
 
-# Descarga dependencias y compila
-RUN go mod download
-RUN go build -o dist/ src/main.go
-
-# Ejecuta la aplicación
+# Ejecutar el binario
 CMD ["./dist/main"]
