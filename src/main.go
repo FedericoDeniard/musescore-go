@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/FedericoDeniard/musescore-go/src/constants"
 	scrap "github.com/FedericoDeniard/musescore-go/src/utils"
@@ -40,8 +42,12 @@ func main() {
 		if constants.KEYS.ENVIROMENT == "production" {
 			chromiumPath = "/usr/bin/chromium"
 		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
 		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
-		browser := rod.New().ControlURL(u).MustConnect()
+		browser := rod.New().Context(ctx).ControlURL(u).MustConnect()
 
 		pdfPath := scrap.Scrap(browser, url)
 		fmt.Println("PDF Path:", pdfPath)
