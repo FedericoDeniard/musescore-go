@@ -16,30 +16,24 @@ func ConvertSvgToPng(svgPath string) (string, *customErrors.HttpError) {
 
 	input, err := os.ReadFile(svgPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al leer el archivo SVG",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al leer el archivo SVG"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 	converter := svg2png.New()
 	output, err := converter.Convert(input)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al convertir el archivo SVG a PNG",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al convertir el archivo SVG a PNG"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 
 	pngPath := filepath.Join(filepath.Dir(svgPath), filepath.Base(svgPath[:len(svgPath)-len(filepath.Ext(svgPath))])+".png")
 	err = os.WriteFile(pngPath, output, 0644)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error escribiendo el archivo PNG:", err)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al escribir el archivo PNG",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al escribir el archivo PNG"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 	return pngPath, nil
 }

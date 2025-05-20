@@ -18,28 +18,23 @@ func DownloadImage(url string) (string, *customErrors.HttpError) {
 
 	err := os.MkdirAll(imagesFolder, 0755)
 	if err != nil {
-		fmt.Println("Error al crear directorio:", err)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al crear directorio",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al crear directorio"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al descargar la imagen",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al descargar la imagen"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Error al descargar la imagen:", resp.StatusCode)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al descargar la imagen",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al descargar la imagen"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 
 	extension, httpError := GetExtensionFromImage(url)
@@ -52,20 +47,16 @@ func DownloadImage(url string) (string, *customErrors.HttpError) {
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		fmt.Println("Error al crear el archivo:", err)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al crear el archivo",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al crear el archivo"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 	defer file.Close()
 
 	if _, err := io.Copy(file, resp.Body); err != nil {
-		fmt.Println("Error al copiar el archivo:", err)
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    "Error al copiar el archivo",
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al copiar el archivo"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 
 	return filePath, nil
@@ -79,15 +70,9 @@ func GetExtensionFromImage(url string) (string, *customErrors.HttpError) {
 	} else if strings.Contains(url, ".jpg") || strings.Contains(url, "image/jpg") {
 		return ".jpg", nil
 	}
-	return "", &customErrors.HttpError{
-		StatusCode: 500,
-		Message:    "Error al obtener la extension",
-	}
-}
-
-type ImgPage struct {
-	data []byte
-	err  error
+	httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al obtener la extension"}
+	fmt.Println(httpError.Error())
+	return "", &httpError
 }
 
 func DeleteImages(paths ...string) {

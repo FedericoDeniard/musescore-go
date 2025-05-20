@@ -23,12 +23,10 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	fmt.Println("Viewport set")
 
 	scrollerComponent, err := page.Timeout(10 * time.Second).Element("#jmuse-scroller-component")
-	fmt.Println(scrollerComponent)
 	if err != nil || scrollerComponent == nil {
-		return "", &customErrors.HttpError{
-			StatusCode: 400,
-			Message:    "No se encontró el componente jmuse-scroller-component",
-		}
+		httpError := customErrors.HttpError{StatusCode: 400, Message: "No se encontró el componente jmuse-scroller-component"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 	scrollerComponent, _ = page.Element("#jmuse-scroller-component")
 
@@ -59,12 +57,11 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	wg.Wait()
 	// fmt.Printf("Title: %s \n", title)
 	fmt.Printf("Partituras encontradas: %d \n", len(sheetsSource))
-
-	fmt.Println(imagesPath)
-	fmt.Printf("Partituras descargadas: %d \n%v", len(imagesPath), imagesPath)
+	fmt.Printf("Partituras descargadas: %d \n", len(imagesPath))
 
 	imagesExtensions, httpError := images.GetExtensionFromImage(imagesPath[0])
 	if httpError != nil {
+		images.DeleteImages(imagesPath...)
 		return "", httpError
 	}
 
@@ -73,19 +70,21 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	if imagesExtensions == ".svg" {
 		convertedImages, httpError = images.ConvertMultipleSvgToPng(imagesPath...)
 		if httpError != nil {
+			images.DeleteImages(imagesPath...)
 			return "", httpError
 		}
 	} else if imagesExtensions == ".png" {
 		convertedImages = imagesPath
 	} else {
-		return "", &customErrors.HttpError{
-			StatusCode: 501,
-			Message:    "Extension no soportada",
-		}
+		httpError := customErrors.HttpError{StatusCode: 501, Message: "Extension no soportada"}
+		fmt.Println(httpError.Error())
+		images.DeleteImages(imagesPath...)
+		return "", &httpError
 	}
 
 	pdfPath, httpError := images.ConvertPngToPdf(convertedImages...)
 	if httpError != nil {
+		images.DeleteImages(imagesPath...)
 		return "", httpError
 	}
 

@@ -16,10 +16,9 @@ func ConvertPngToPdf(pngPaths ...string) (string, *customErrors.HttpError) {
 	for _, path := range pngPaths {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return "", &customErrors.HttpError{
-				StatusCode: 500,
-				Message:    fmt.Sprintf("error leyendo PNG %s: %w", path, err),
-			}
+			httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al leer el archivo"}
+			fmt.Println(httpError.Error())
+			return "", &httpError
 		}
 		pdf.AddPageFormat("P", gofpdf.SizeType{
 			Wd: 210,
@@ -42,17 +41,15 @@ func ConvertPngToPdf(pngPaths ...string) (string, *customErrors.HttpError) {
 	) + ".pdf"
 
 	if err := os.MkdirAll(filepath.Dir(outputPDF), 0755); err != nil {
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    fmt.Sprintf("error creando directorio: %w", err),
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al crear directorio"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 
 	if err := pdf.OutputFileAndClose(outputPDF); err != nil {
-		return "", &customErrors.HttpError{
-			StatusCode: 500,
-			Message:    fmt.Sprintf("error guardando PDF: %w", err),
-		}
+		httpError := customErrors.HttpError{StatusCode: 500, Message: "Error al guardar el PDF"}
+		fmt.Println(httpError.Error())
+		return "", &httpError
 	}
 
 	return outputPDF, nil
