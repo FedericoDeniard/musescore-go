@@ -6,41 +6,73 @@ import (
 	"path/filepath"
 	"sync"
 
+	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/mskrha/svg2png"
 )
 
-func ConvertSvgToPng(svgPath string) string {
+func ConvertSvgToPng(svgPath string) (string, *customErrors.HttpError) {
 
 	var input []byte
 
 	input, err := os.ReadFile(svgPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		return "", &customErrors.HttpError{
+			StatusCode: 500,
+			Message:    "Error al leer el archivo SVG",
+		}
 	}
 	converter := svg2png.New()
 	output, err := converter.Convert(input)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		return "", &customErrors.HttpError{
+			StatusCode: 500,
+			Message:    "Error al convertir el archivo SVG a PNG",
+		}
 	}
 
 	pngPath := filepath.Join(filepath.Dir(svgPath), filepath.Base(svgPath[:len(svgPath)-len(filepath.Ext(svgPath))])+".png")
 	err = os.WriteFile(pngPath, output, 0644)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error escribiendo el archivo PNG:", err)
+		return "", &customErrors.HttpError{
+			StatusCode: 500,
+			Message:    "Error al escribir el archivo PNG",
+		}
 	}
-	return pngPath
+	return pngPath, nil
 }
 
-func ConvertMultipleSvgToPng(svgPaths ...string) ([]string, error) {
+func ConvertMultipleSvgToPng(svgPaths ...string) ([]string, *customErrors.HttpError) {
 	var wg sync.WaitGroup
 	outputPaths := make([]string, len(svgPaths))
+	errChan := make(chan *customErrors.HttpError, len(svgPaths))
 	for i, svgPath := range svgPaths {
 		wg.Add(1)
 		go func(path string, index int) {
 			defer wg.Done()
-			outputPaths[index] = ConvertSvgToPng(path)
+			out, htppError := ConvertSvgToPng(path)
+			if htppError != nil {
+				errChan <- htppError
+				return
+			}
+			outputPaths[index] = out
 		}(svgPath, i)
 	}
 	wg.Wait()
+	close(errChan)
+	for err := range errChan {
+		var createdImages []string
+		for _, path := range outputPaths {
+			if path != "" {
+				createdImages = append(createdImages, path)
+			}
+		}
+		if len(createdImages) > 0 {
+			DeleteImages(createdImages...)
+		}
+		return nil, err
+	}
 	return outputPaths, nil
 }

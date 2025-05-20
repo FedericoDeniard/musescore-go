@@ -6,11 +6,12 @@ import (
 	"sync"
 	"time"
 
+	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/FedericoDeniard/musescore-go/src/utils/images"
 	"github.com/go-rod/rod"
 )
 
-func Scrap(browser *rod.Browser, url string) string {
+func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	fmt.Println("Scraping process started...")
 	defer browser.MustClose()
 
@@ -21,6 +22,16 @@ func Scrap(browser *rod.Browser, url string) string {
 	page.MustSetViewport(1920, 1080, 1, false)
 	fmt.Println("Viewport set")
 
+	scrollerComponent, err := page.Timeout(10 * time.Second).Element("#jmuse-scroller-component")
+	fmt.Println(scrollerComponent)
+	if err != nil || scrollerComponent == nil {
+		return "", &customErrors.HttpError{
+			StatusCode: 400,
+			Message:    "No se encontró el componente jmuse-scroller-component",
+		}
+	}
+	scrollerComponent, _ = page.Element("#jmuse-scroller-component")
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -30,11 +41,19 @@ func Scrap(browser *rod.Browser, url string) string {
 	var imagesPath []string
 
 	// go func() { defer wg.Done(); title = getTitle(page) }()
-	go func() { defer wg.Done(); getSheets(page, sheetsChannel) }()
+	go func() {
+		defer wg.Done()
+		getSheets(scrollerComponent, sheetsChannel)
+	}()
 
 	for sheet := range sheetsChannel {
 		sheetsSource = append(sheetsSource, sheet)
-		imagesPath = append(imagesPath, images.DownloadImage(sheet))
+		tempImage, err := images.DownloadImage(sheet)
+		if err != nil {
+			images.DeleteImages(imagesPath...)
+			return "", err
+		}
+		imagesPath = append(imagesPath, tempImage)
 	}
 
 	wg.Wait()
@@ -44,29 +63,36 @@ func Scrap(browser *rod.Browser, url string) string {
 	fmt.Println(imagesPath)
 	fmt.Printf("Partituras descargadas: %d \n%v", len(imagesPath), imagesPath)
 
-	imagesExtensions := images.GetExtensionFromImage(imagesPath[0])
+	imagesExtensions, httpError := images.GetExtensionFromImage(imagesPath[0])
+	if httpError != nil {
+		return "", httpError
+	}
+
 	var convertedImages []string
-	var err error
 
 	if imagesExtensions == ".svg" {
-		convertedImages, err = images.ConvertMultipleSvgToPng(imagesPath...)
-		if err != nil {
-			panic(err)
+		convertedImages, httpError = images.ConvertMultipleSvgToPng(imagesPath...)
+		if httpError != nil {
+			return "", httpError
 		}
 	} else if imagesExtensions == ".png" {
 		convertedImages = imagesPath
 	} else {
-		convertedImages = imagesPath
+		return "", &customErrors.HttpError{
+			StatusCode: 501,
+			Message:    "Extension no soportada",
+		}
 	}
 
-	pdfPath, err := images.ConvertPngToPdf(convertedImages...)
-	if err != nil {
-		panic(err)
+	pdfPath, httpError := images.ConvertPngToPdf(convertedImages...)
+	if httpError != nil {
+		return "", httpError
 	}
+
 	filesToDelete := append(imagesPath, convertedImages...)
 	images.DeleteImages(filesToDelete...)
 	fmt.Println("Process finished")
-	return pdfPath
+	return pdfPath, nil
 }
 
 // func getTitle(page *rod.Page) string {
@@ -84,16 +110,12 @@ func Scrap(browser *rod.Browser, url string) string {
 // 	return title
 // }
 
-func getSheets(page *rod.Page, channel chan<- string) {
+func getSheets(component *rod.Element, channel chan<- string) {
 	fmt.Println("Getting sheets...")
 	defer close(channel)
-	jmuseScrollerComponent, err := page.Element("#jmuse-scroller-component")
-	if err != nil {
-		fmt.Println("No se encontró el componente jmuse-scroller-component:", err)
-		return
-	}
 
-	jmuseScrollerComponent.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
+	component.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
+	page := component.Page()
 
 	page.MustWaitRequestIdle()
 	sheets := page.MustElements(".EEnGW")
