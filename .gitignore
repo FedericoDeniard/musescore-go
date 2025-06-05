@@ -1,3 +1,10 @@
 src/downloads/images
 dist/
 .env
+
+# Amplify
+src/static/frontend/amplify/.config/local-*
+src/static/frontend/amplify/#current-cloud-backend/
+src/static/frontend/amplify/.temp/
+src/static/frontend/amplify/.aws-exports
+
