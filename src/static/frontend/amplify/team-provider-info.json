@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-musescorego-dev-3cdcc-authRole",
+      "UnauthRoleArn": "arn:aws:iam::019662059111:role/amplify-musescorego-dev-3cdcc-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::019662059111:role/amplify-musescorego-dev-3cdcc-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-musescorego-dev-3cdcc-deployment",
+      "UnauthRoleName": "amplify-musescorego-dev-3cdcc-unauthRole",
+      "StackName": "amplify-musescorego-dev-3cdcc",
+      "StackId": "arn:aws:cloudformation:us-east-2:019662059111:stack/amplify-musescorego-dev-3cdcc/ead83130-424c-11f0-b9f4-0a68c300fddd",
+      "AmplifyAppId": "d16ea5rlmmpfwk"
+    },
+    "categories": {
+      "auth": {
+        "musescorego5a2fda46": {}
+      }
+    }
+  }
+}

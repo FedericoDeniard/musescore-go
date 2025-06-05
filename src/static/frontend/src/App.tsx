@@ -7,7 +7,17 @@ import { Title } from "./components/Title";
 import { SearchBox } from "./components/SearchBox";
 import { toast } from "sonner";
 
-function App() {
+import "@aws-amplify/ui-react/styles.css";
+import { withAuthenticator, Button, View } from "@aws-amplify/ui-react";
+
+import type { AuthUser } from "aws-amplify/auth";
+
+type AppProps = {
+  signOut?: () => void;
+  user?: AuthUser;
+};
+
+function App({ signOut }: AppProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -73,14 +83,19 @@ function App() {
   }, [url]);
 
   return (
-    <div className="container-title">
-      <Title />
-      <SearchBox
-        onClick={(getUrl: string) => setUrl(getUrl)}
-        loading={loading}
-      />
-    </div>
+    <View>
+      <div className="container-title">
+        <Title />
+        <SearchBox
+          onClick={(getUrl: string) => setUrl(getUrl)}
+          loading={loading}
+        />
+        <Button variation="primary" colorTheme="error" onClick={signOut}>
+          Sign out
+        </Button>
+      </div>
+    </View>
   );
 }
 
-export default App;
+export default withAuthenticator(App);
