@@ -1,0 +1,10 @@
+{
+  "build": {
+    "builder": "DOCKER",
+    "dockerfile": "Dockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 5
+  }
+}
