@@ -1,20 +1,15 @@
 {
   "dev": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-musescorego-dev-3cdcc-authRole",
-      "UnauthRoleArn": "arn:aws:iam::019662059111:role/amplify-musescorego-dev-3cdcc-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::019662059111:role/amplify-musescorego-dev-3cdcc-authRole",
+      "AuthRoleName": "amplify-musescorescrapper-dev-89f76-authRole",
+      "UnauthRoleArn": "arn:aws:iam::019662059111:role/amplify-musescorescrapper-dev-89f76-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::019662059111:role/amplify-musescorescrapper-dev-89f76-authRole",
       "Region": "us-east-2",
-      "DeploymentBucketName": "amplify-musescorego-dev-3cdcc-deployment",
-      "UnauthRoleName": "amplify-musescorego-dev-3cdcc-unauthRole",
-      "StackName": "amplify-musescorego-dev-3cdcc",
-      "StackId": "arn:aws:cloudformation:us-east-2:019662059111:stack/amplify-musescorego-dev-3cdcc/ead83130-424c-11f0-b9f4-0a68c300fddd",
-      "AmplifyAppId": "d16ea5rlmmpfwk"
-    },
-    "categories": {
-      "auth": {
-        "musescorego5a2fda46": {}
-      }
+      "DeploymentBucketName": "amplify-musescorescrapper-dev-89f76-deployment",
+      "UnauthRoleName": "amplify-musescorescrapper-dev-89f76-unauthRole",
+      "StackName": "amplify-musescorescrapper-dev-89f76",
+      "StackId": "arn:aws:cloudformation:us-east-2:019662059111:stack/amplify-musescorescrapper-dev-89f76/fa345a70-424f-11f0-a7a7-06a1a16088c3",
+      "AmplifyAppId": "d3gljrhrkmnw3s"
     }
   }
 }

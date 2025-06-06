@@ -11,6 +11,7 @@ import "@aws-amplify/ui-react/styles.css";
 import { withAuthenticator, Button, View } from "@aws-amplify/ui-react";
 
 import type { AuthUser } from "aws-amplify/auth";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 type AppProps = {
   signOut?: () => void;
@@ -21,16 +22,30 @@ function App({ signOut }: AppProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function getAuthToken() {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+      return token;
+    } catch (error) {
+      console.error("Error obteniendo token", error);
+      return null;
+    }
+  }
+
   useEffect(() => {
     const downloadUrl = async () => {
       if (url) {
         setLoading(true);
+
+        const token = await getAuthToken();
 
         toast.promise(
           fetch(KEYS.url, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ url }),
           }).then(async (response) => {
