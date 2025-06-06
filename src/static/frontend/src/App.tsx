@@ -39,9 +39,12 @@ function App({ signOut }: AppProps) {
         setLoading(true);
 
         const token = await getAuthToken();
+        const envUrl = KEYS.url;
+        const fetchUrl =
+          envUrl === "" ? window.location.origin + "/api/scrap" : envUrl;
 
         toast.promise(
-          fetch(KEYS.url, {
+          fetch(fetchUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
