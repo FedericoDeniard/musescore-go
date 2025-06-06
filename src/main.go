@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/FedericoDeniard/musescore-go/src/constants"
+	"github.com/FedericoDeniard/musescore-go/src/config"
+	"github.com/FedericoDeniard/musescore-go/src/middleware"
 	scrap "github.com/FedericoDeniard/musescore-go/src/utils"
 	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/gin-gonic/gin"
@@ -27,8 +28,16 @@ func main() {
 		c.File("./src/static/frontend/dist/index.html")
 	})
 
-	router.POST("/scrap", func(c *gin.Context) {
+	protected := router.Group("/api")
+	protected.Use(middleware.ValidateJWT())
 
+	protected.POST("/scrap", func(c *gin.Context) {
+		user, exists := middleware.GetUserFromContext(c)
+		if !exists {
+			customErrors.HandleError(c, &customErrors.HttpError{StatusCode: 500, Message: "Error obteniendo usuario del contexto"})
+			return
+		}
+		fmt.Println("Usuario autenticado: ", user)
 		var req ScrapRequest
 
 		if err := c.BindJSON(&req); err != nil {
@@ -43,7 +52,7 @@ func main() {
 		fmt.Println("URL recibida:", url)
 
 		chromiumPath := "/usr/bin/chromium-browser"
-		if constants.KEYS.ENVIROMENT == "production" {
+		if config.KEYS.ENVIRONMENT == "production" {
 			chromiumPath = "/usr/bin/chromium"
 		}
 

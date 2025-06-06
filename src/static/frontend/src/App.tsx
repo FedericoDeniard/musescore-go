@@ -7,20 +7,48 @@ import { Title } from "./components/Title";
 import { SearchBox } from "./components/SearchBox";
 import { toast } from "sonner";
 
-function App() {
+import "@aws-amplify/ui-react/styles.css";
+import { withAuthenticator, Button, View } from "@aws-amplify/ui-react";
+
+import type { AuthUser } from "aws-amplify/auth";
+import { fetchAuthSession } from "aws-amplify/auth";
+
+type AppProps = {
+  signOut?: () => void;
+  user?: AuthUser;
+};
+
+function App({ signOut }: AppProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+
+  async function getAuthToken() {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+      return token;
+    } catch (error) {
+      console.error("Error obteniendo token", error);
+      return null;
+    }
+  }
 
   useEffect(() => {
     const downloadUrl = async () => {
       if (url) {
         setLoading(true);
 
+        const token = await getAuthToken();
+        const envUrl = KEYS.url;
+        const fetchUrl =
+          envUrl === "" ? window.location.origin + "/api/scrap" : envUrl;
+
         toast.promise(
-          fetch(KEYS.url, {
+          fetch(fetchUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ url }),
           }).then(async (response) => {
@@ -73,14 +101,19 @@ function App() {
   }, [url]);
 
   return (
-    <div className="container-title">
-      <Title />
-      <SearchBox
-        onClick={(getUrl: string) => setUrl(getUrl)}
-        loading={loading}
-      />
-    </div>
+    <View>
+      <div className="container-title">
+        <Title />
+        <SearchBox
+          onClick={(getUrl: string) => setUrl(getUrl)}
+          loading={loading}
+        />
+        <Button variation="primary" colorTheme="error" onClick={signOut}>
+          Sign out
+        </Button>
+      </div>
+    </View>
   );
 }
 
-export default App;
+export default withAuthenticator(App);

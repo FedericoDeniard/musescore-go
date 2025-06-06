@@ -1,0 +1,6 @@
+{
+  "deploy": {
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 5
+  }
+}
