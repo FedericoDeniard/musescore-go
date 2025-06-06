@@ -9,13 +9,19 @@ import (
 	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/FedericoDeniard/musescore-go/src/utils/images"
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/proto"
 )
 
 func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	fmt.Println("Scraping process started...")
 	defer browser.MustClose()
 
-	page := browser.MustPage(url)
+	page, err := browser.Page(proto.TargetCreateTarget{
+		URL: url,
+	})
+	if err != nil {
+		return "", &customErrors.HttpError{StatusCode: 400, Message: "Url inválida"}
+	}
 	fmt.Println("Page created")
 	defer page.MustClose()
 	fmt.Println("Page loaded")
