@@ -52,7 +52,7 @@ var jwksCache *JWKSCache
 
 func init() {
 	jwksCache = &JWKSCache{
-		cacheTTL: 1 * time.Hour, // Cache por 1 hora
+		cacheTTL: 24 * time.Hour, // Cache por 1 hora
 	}
 }
 
