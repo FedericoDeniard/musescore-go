@@ -109,7 +109,7 @@ function App({ signOut }: AppProps) {
           loading={loading}
         />
         <Button variation="primary" colorTheme="error" onClick={signOut}>
-          Cerrar sesión
+          Sign out
         </Button>
       </div>
     </View>
