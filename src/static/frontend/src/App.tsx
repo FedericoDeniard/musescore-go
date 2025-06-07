@@ -53,7 +53,10 @@ function App({ signOut }: AppProps) {
             body: JSON.stringify({ url }),
           }).then(async (response) => {
             if (!response.ok) {
-              throw new Error("Error descargando la partitura.");
+              const errorData = await response.json();
+              throw new Error(
+                "Error descargando la partitura: " + errorData.error
+              );
             }
 
             // Obtener el nombre del archivo desde los encabezados

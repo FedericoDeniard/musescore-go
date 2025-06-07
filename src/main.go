@@ -34,22 +34,22 @@ func main() {
 	protected.POST("/scrap", func(c *gin.Context) {
 		user, exists := middleware.GetUserFromContext(c)
 		if !exists {
-			customErrors.HandleError(c, &customErrors.HttpError{StatusCode: 500, Message: "Error obteniendo usuario del contexto"})
+			customErrors.HandleError(c, &customErrors.HttpError{StatusCode: 500, Message: "Error obteniendo usuario"})
 			return
 		}
-		fmt.Println("Usuario autenticado: ", user)
 		var req ScrapRequest
 
 		if err := c.BindJSON(&req); err != nil {
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: 400,
-				Message:    "Invalid JSON",
+				Message:    "Formato de solicitud inválido",
 			})
 			return
 		}
 
 		url := req.URL
 		fmt.Println("URL recibida:", url)
+		fmt.Println("Usuario:", user.Username, user.Email)
 
 		chromiumPath := "/usr/bin/chromium-browser"
 		if config.KEYS.ENVIRONMENT == "production" {

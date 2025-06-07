@@ -20,7 +20,7 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 		URL: url,
 	})
 	if err != nil {
-		return "", &customErrors.HttpError{StatusCode: 400, Message: "Url inválida"}
+		return "", &customErrors.HttpError{StatusCode: 400, Message: "La dirección web que ingresaste no es válida. Verifica que sea correcta e inténtalo nuevamente."}
 	}
 	fmt.Println("Page created")
 	defer page.MustClose()

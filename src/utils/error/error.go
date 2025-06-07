@@ -27,6 +27,7 @@ func HandleError(c *gin.Context, err error) {
 		c.Abort()
 	} else {
 		fmt.Println(err)
+		fmt.Println(err.Error())
 		c.JSON(500, gin.H{"error": "Error interno del servidor"})
 		c.Abort()
 	}

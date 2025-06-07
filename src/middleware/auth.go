@@ -192,12 +192,11 @@ func ValidateJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Obtener el header Authorization
 		authHeader := c.GetHeader("Authorization")
-		fmt.Printf("[ValidateJWT] Validating JWT token. Request path: %s\n", c.Request.URL.Path)
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    "Token no proporcionado o formato inválido",
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
@@ -207,91 +206,75 @@ func ValidateJWT() gin.HandlerFunc {
 		if tokenString == "" {
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    "Token vacío después de extraer el prefijo Bearer",
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Printf("[ValidateJWT] Token JWT recibido (primeros 10 caracteres): %s...\n", tokenString[:min(10, len(tokenString))])
 
 		// Parsear y validar el token
-		fmt.Println("[ValidateJWT] Iniciando validación del token JWT...")
 		token, err := jwt.ParseWithClaims(tokenString, &CognitoJWTClaims{}, getPublicKey)
 		if err != nil {
-			errMsg := fmt.Sprintf("Error al parsear el token: %v", err)
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    errMsg,
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Println("[ValidateJWT] Token parseado correctamente")
 
 		if !token.Valid {
-			errMsg := "Token marcado como inválido por la librería JWT"
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    errMsg,
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Println("[ValidateJWT] Token validado exitosamente")
 
 		// Obtener las claims
 		claims, ok := token.Claims.(*CognitoJWTClaims)
 		if !ok {
-			errMsg := "No se pudieron extraer las claims del token"
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    errMsg,
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Printf("[ValidateJWT] Claims extraídas - Usuario: %s, Email: %s\n", claims.Username, claims.Email)
 
 		// Validar que sea un token ID
 		if claims.TokenUse != "id" {
-			errMsg := fmt.Sprintf("Tipo de token incorrecto. Se esperaba 'id' pero se obtuvo: %s", claims.TokenUse)
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    errMsg,
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Println("[ValidateJWT] TokenUse validado correctamente")
 
 		// Validar audience
 		clientID := config.KEYS.AWS_USER_POOL_CLIENT_ID
 		if clientID != "" && claims.Audience != clientID {
-			errMsg := fmt.Sprintf("Audience inválida. Esperada: %s, Obtenida: %s", clientID, claims.Audience)
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    errMsg,
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Printf("[ValidateJWT] Audience validada correctamente: %s\n", claims.Audience)
 
 		// Validar issuer
 		region := config.KEYS.AWS_DEFAULT_REGION
 		userPoolID := config.KEYS.AWS_USER_POOL_ID
 		expectedIssuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", region, userPoolID)
 		if claims.Issuer != expectedIssuer {
-			errMsg := fmt.Sprintf("Issuer inválido. Esperado: %s, Obtenido: %s", expectedIssuer, claims.Issuer)
 			customErrors.HandleError(c, &customErrors.HttpError{
 				StatusCode: http.StatusUnauthorized,
-				Message:    errMsg,
+				Message:    "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
 			})
 			return
 		}
-		fmt.Printf("[ValidateJWT] Issuer validado correctamente: %s\n", claims.Issuer)
 
 		// Agregar el usuario al contexto de Gin
 		c.Set("user", claims)
-		fmt.Printf("[ValidateJWT] Usuario autenticado exitosamente. UserID: %s\n", claims.Sub)
 
 		// Continuar con el siguiente handler
 		c.Next()
-		fmt.Println("[ValidateJWT] Finalizada validación de JWT")
 	}
 }
 
