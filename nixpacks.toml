@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ["go build -o out src/main.go"]
+
+[start]
+cmd = "./out"
