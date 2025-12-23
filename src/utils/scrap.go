@@ -138,6 +138,23 @@ func getSheets(component *rod.Element, channel chan<- string) {
 	sheets := page.MustElements(".MHaWn")
 	fmt.Println("Sheets found: ", len(sheets))
 
+	// Log para ver qué contiene el primer elemento
+	if len(sheets) > 0 {
+		htmlContent := sheets[0].MustEval(`() => this.innerHTML`).String()
+		maxLen := 500
+		if len(htmlContent) < maxLen {
+			maxLen = len(htmlContent)
+		}
+		fmt.Printf("First sheet HTML (first 500 chars): %s\n", htmlContent[:maxLen])
+		
+		outerHTML := sheets[0].MustEval(`() => this.outerHTML`).String()
+		maxLen2 := 300
+		if len(outerHTML) < maxLen2 {
+			maxLen2 = len(outerHTML)
+		}
+		fmt.Printf("First sheet outer HTML (first 300 chars): %s\n", outerHTML[:maxLen2])
+	}
+
 	for i, sheet := range sheets {
 		fmt.Printf("Procesando hoja %d...\n", i+1)
 
@@ -159,7 +176,7 @@ func getSheets(component *rod.Element, channel chan<- string) {
 		}`)
 		fmt.Printf("Sheet %d info: %s\n", i+1, sheetInfo.String())
 
-		err := page.Timeout(30 * time.Second).Wait(&rod.EvalOptions{
+		err := page.Timeout(10 * time.Second).Wait(&rod.EvalOptions{
 			ThisObj: sheet.Object,
 			JS: `() => {
 		const img = this.querySelector("img");
