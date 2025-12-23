@@ -13,13 +13,14 @@ import (
 )
 
 func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
-	fmt.Println("Scraping process started...")
+	fmt.Println("Scraping process started for URL:", url)
 	defer browser.MustClose()
 
 	page, err := browser.Page(proto.TargetCreateTarget{
 		URL: url,
 	})
 	if err != nil {
+		fmt.Println("Error creating page:", err)
 		return "", &customErrors.HttpError{StatusCode: 400, Message: "La dirección web que ingresaste no es válida. Verifica que sea correcta e inténtalo nuevamente."}
 	}
 	fmt.Println("Page created")
@@ -30,11 +31,13 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 
 	scrollerComponent, err := page.Timeout(10 * time.Second).Element("#jmuse-scroller-component")
 	if err != nil || scrollerComponent == nil {
+		fmt.Println("Scroller component not found")
 		httpError := customErrors.HttpError{StatusCode: 404, Message: "No se encontró el componente jmuse-scroller-component"}
 		fmt.Println(httpError.Error())
 		return "", &httpError
 	}
 	scrollerComponent, _ = page.Element("#jmuse-scroller-component")
+	fmt.Println("Scroller component found")
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -70,16 +73,20 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 		images.DeleteImages(imagesPath...)
 		return "", httpError
 	}
+	fmt.Println("Extension obtained:", imagesExtensions)
 
 	var convertedImages []string
 
 	if imagesExtensions == ".svg" {
+		fmt.Println("Converting SVG to PNG")
 		convertedImages, httpError = images.ConvertMultipleSvgToPng(imagesPath...)
 		if httpError != nil {
 			images.DeleteImages(imagesPath...)
 			return "", httpError
 		}
+		fmt.Println("SVG conversion completed")
 	} else if imagesExtensions == ".png" {
+		fmt.Println("Images are PNG")
 		convertedImages = imagesPath
 	} else {
 		httpError := customErrors.HttpError{StatusCode: 501, Message: "Extension no soportada"}
@@ -93,6 +100,7 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 		images.DeleteImages(imagesPath...)
 		return "", httpError
 	}
+	fmt.Println("PDF created")
 
 	filesToDelete := append(imagesPath, convertedImages...)
 	images.DeleteImages(filesToDelete...)

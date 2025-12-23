@@ -51,23 +51,29 @@ func main() {
 		fmt.Println("URL recibida:", url)
 		fmt.Println("Usuario:", user.Username, user.Email)
 
+		fmt.Println("Starting scrap for URL:", url)
+
 		chromiumPath := "/usr/bin/chromium-browser"
 		if config.KEYS.ENVIRONMENT == "production" {
 			chromiumPath = "/usr/bin/chromium"
 		}
 
+		fmt.Println("Launching Chrome with path:", chromiumPath)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 
 		u := launcher.New().Bin(chromiumPath).Headless(true).Set("no-sandbox").MustLaunch()
+		fmt.Println("Chrome launched successfully")
 		browser := rod.New().Context(ctx).ControlURL(u).MustConnect()
+		fmt.Println("Browser connected")
 
 		pdfPath, httpError := scrap.Scrap(browser, url)
 		if httpError != nil {
 			customErrors.HandleError(c, httpError)
 			return
 		}
-		fmt.Println("PDF Path:", pdfPath)
+		fmt.Println("Scrap completed, PDF path:", pdfPath)
 		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filepath.Base(pdfPath)))
 		c.Header("Content-Type", "application/pdf")
 
