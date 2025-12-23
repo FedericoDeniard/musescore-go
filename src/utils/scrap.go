@@ -143,6 +143,22 @@ func getSheets(component *rod.Element, channel chan<- string) {
 
 		sheet.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
 
+		// Log para ver qué contiene el elemento
+		sheetInfo := sheet.MustEval(`() => {
+			const img = this.querySelector("img");
+			if (!img) return { hasImg: false };
+			return {
+				hasImg: true,
+				src: img.src || "",
+				dataSrc: img.getAttribute("data-src") || "",
+				className: img.className || "",
+				loading: img.loading || "",
+				complete: img.complete,
+				naturalHeight: img.naturalHeight
+			};
+		}`)
+		fmt.Printf("Sheet %d info: %s\n", i+1, sheetInfo.String())
+
 		err := page.Timeout(30 * time.Second).Wait(&rod.EvalOptions{
 			ThisObj: sheet.Object,
 			JS: `() => {
