@@ -68,6 +68,10 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	fmt.Printf("Partituras encontradas: %d \n", len(sheetsSource))
 	fmt.Printf("Partituras descargadas: %d \n", len(imagesPath))
 
+	if len(imagesPath) == 0 {
+		return "", &customErrors.HttpError{StatusCode: 404, Message: "No se encontraron partituras en la página proporcionada."}
+	}
+
 	imagesExtensions, httpError := images.GetExtensionFromImage(imagesPath[0])
 	if httpError != nil {
 		images.DeleteImages(imagesPath...)
@@ -139,11 +143,11 @@ func getSheets(component *rod.Element, channel chan<- string) {
 
 		sheet.MustEval(`() => this.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" })`)
 
-		err := page.Timeout(10 * time.Second).Wait(&rod.EvalOptions{
+		err := page.Timeout(30 * time.Second).Wait(&rod.EvalOptions{
 			ThisObj: sheet.Object,
 			JS: `() => {
 		const img = this.querySelector("img");
-		return img && img.complete && img.naturalHeight !== 0;
+		return img && img.src && img.src.trim() !== "";
 	}`,
 		})
 
