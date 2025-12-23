@@ -131,7 +131,7 @@ func getSheets(component *rod.Element, channel chan<- string) {
 	page := component.Page()
 
 	page.MustWaitRequestIdle()
-	sheets := page.MustElements(".EEnGW")
+	sheets := page.MustElements(".MHaWn")
 	fmt.Println("Sheets found: ", len(sheets))
 
 	for i, sheet := range sheets {
