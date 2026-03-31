@@ -57,6 +57,9 @@ func main() {
 		if config.KEYS.ENVIRONMENT == "production" {
 			chromiumPath = "/usr/bin/chromium"
 		}
+		if config.KEYS.CHROMIUM_PATH != "" {
+			chromiumPath = config.KEYS.CHROMIUM_PATH
+		}
 
 		fmt.Println("Launching Chrome with path:", chromiumPath)
 

@@ -8,18 +8,21 @@ import (
 	customErrors "github.com/FedericoDeniard/musescore-go/src/utils/error"
 	"github.com/FedericoDeniard/musescore-go/src/utils/images"
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/proto"
+	"github.com/go-rod/stealth"
 )
 
 func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	fmt.Println("Scraping process started for URL:", url)
 	defer browser.MustClose()
 
-	page, err := browser.Page(proto.TargetCreateTarget{
-		URL: url,
-	})
+	page, err := stealth.Page(browser)
 	if err != nil {
-		fmt.Println("Error creating page:", err)
+		fmt.Println("Error creating stealth page:", err)
+		return "", &customErrors.HttpError{StatusCode: 500, Message: "Error iniciando el browser."}
+	}
+	err = page.Navigate(url)
+	if err != nil {
+		fmt.Println("Error navigating to URL:", err)
 		return "", &customErrors.HttpError{StatusCode: 400, Message: "La dirección web que ingresaste no es válida. Verifica que sea correcta e inténtalo nuevamente."}
 	}
 	fmt.Println("Page created")
@@ -28,14 +31,14 @@ func Scrap(browser *rod.Browser, url string) (string, *customErrors.HttpError) {
 	page.MustSetViewport(1920, 1080, 1, false)
 	fmt.Println("Viewport set")
 
-	scrollerComponent, err := page.Timeout(10 * time.Second).Element("#jmuse-scroller-component")
+	scrollerComponent, err := page.Timeout(10 * time.Second).Element(".NBpJY")
 	if err != nil || scrollerComponent == nil {
 		fmt.Println("Scroller component not found")
-		httpError := customErrors.HttpError{StatusCode: 404, Message: "No se encontró el componente jmuse-scroller-component"}
+		httpError := customErrors.HttpError{StatusCode: 404, Message: "No se encontró el componente de partituras en la página. Verificá que la URL sea de una partitura de Musescore."}
 		fmt.Println(httpError.Error())
 		return "", &httpError
 	}
-	scrollerComponent, _ = page.Element("#jmuse-scroller-component")
+	scrollerComponent, _ = page.Element(".NBpJY")
 	fmt.Println("Scroller component found")
 
 	var wg sync.WaitGroup
@@ -134,7 +137,7 @@ func getSheets(component *rod.Element, channel chan<- string) {
 	page := component.Page()
 
 	page.MustWaitRequestIdle()
-	sheets := page.MustElements(".A8huy")
+	sheets := page.MustElements(".BBOD3")
 	fmt.Println("Sheets found: ", len(sheets))
 
 	for i, sheet := range sheets {
